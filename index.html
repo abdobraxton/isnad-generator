@@ -336,58 +336,62 @@
         
         function scrollToWizardSection(stepNum) { currentStep = stepNum; updateWizardUI(); }
 
-        document.getElementById('btnGenerateAssignment').onclick = () => {
-            const classesCount = {
-                1: parseInt(document.getElementById('classCount1').value) || 0,
-                2: parseInt(document.getElementById('classCount2').value) || 0,
-                3: parseInt(document.getElementById('classCount3').value) || 0,
-                4: parseInt(document.getElementById('classCount4').value) || 0
-            };
+         document.getElementById('btnGenerateAssignment').onclick = () => {
+    const classesCount = {
+        1: parseInt(document.getElementById('classCount1').value) || 0,
+        2: parseInt(document.getElementById('classCount2').value) || 0,
+        3: parseInt(document.getElementById('classCount3').value) || 0,
+        4: parseInt(document.getElementById('classCount4').value) || 0
+    };
 
-            const resultsTableBody = document.getElementById('resultsTableBody');
-            resultsTableBody.innerHTML = '';
+    const resultsTableBody = document.getElementById('resultsTableBody');
+    resultsTableBody.innerHTML = '';
 
-            subjectsData.forEach(sub => {
-                const positions = parseInt(document.getElementById(`pos_${sub.code}`).value) || 0;
-                if (positions === 0) return;
+    subjectsData.forEach(sub => {
+        const positions = parseInt(document.getElementById(`pos_${sub.code}`).value) || 0;
+        if (positions === 0) return;
 
-                const hrs = {
-                    1: parseFloat(document.getElementById(`hr_${sub.code}_1`).value) || 0,
-                    2: parseFloat(document.getElementById(`hr_${sub.code}_2`).value) || 0,
-                    3: parseFloat(document.getElementById(`hr_${sub.code}_3`).value) || 0,
-                    4: parseFloat(document.getElementById(`hr_${sub.code}_4`).value) || 0
-                };
-
-                for(let p = 1; p <= positions; p++) {
-                    let assignedText = '';
-                    let assignedClassesCount = 0;
-                    let calculatedHours = 0;
-
-                    if (p % 2 === 1 || positions === 1) {
-                        assignedText = `المستوى الأول متوسط وثالثة متوسط (تناظر تربوي)`;
-                        calculatedHours = (classesCount[1] * hrs[1] + classesCount[3] * hrs[3]) / Math.max(1, Math.round(positions / 2));
-                        assignedClassesCount = Math.round((classesCount[1] + classesCount[3]) / Math.max(1, Math.round(positions / 2)));
-                    } else {
-                        assignedText = `المستوى الثاني متوسط ورابعة متوسط (تناظر تربوي)`;
-                        calculatedHours = (classesCount[2] * hrs[2] + classesCount[4] * hrs[4]) / Math.max(1, Math.floor(positions / 2));
-                        assignedClassesCount = Math.round((classesCount[2] + classesCount[4]) / Math.max(1, Math.floor(positions / 2)));
-                    }
-
-                    resultsTableBody.innerHTML += `
-                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/40 border-b dark:border-slate-700 transition">
-                            <td class="p-3 font-semibold text-slate-700 dark:text-white">${sub.name}</td>
-                            <td class="p-3 text-slate-500">منصب رقم 0${p}</td>
-                            <td class="p-3 text-emerald-600 dark:text-emerald-400 font-medium">${assignedText}</td>
-                            <td class="p-3 text-center font-bold">${assignedClassesCount} أقسام</td>
-                            <td class="p-3 text-center font-bold text-blue-600 bg-slate-50/50 dark:bg-slate-800/30">${calculatedHours.toFixed(1)} ساعة</td>
-                        </tr>
-                    `;
-                }
-            });
-
-            document.getElementById('resultsSection').classList.remove('hidden');
-            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+        const hrs = {
+            1: parseFloat(document.getElementById(`hr_${sub.code}_1`).value) || 0,
+            2: parseFloat(document.getElementById(`hr_${sub.code}_2`).value) || 0,
+            3: parseFloat(document.getElementById(`hr_${sub.code}_3`).value) || 0,
+            4: parseFloat(document.getElementById(`hr_${sub.code}_4`).value) || 0
         };
+
+        // توليد قائمة الأقسام المتاحة
+        let allClasses = [];
+        for(let lvl = 1; lvl <= 4; lvl++) {
+            for(let i = 1; i <= classesCount[lvl]; i++) {
+                allClasses.push(`${lvl}م${i}`);
+            }
+        }
+
+        // توزيع الأقسام بالتساوي على المناصب
+        for(let p = 1; p <= positions; p++) {
+            let assignedClasses = allClasses.filter((_, index) => index % positions === p - 1);
+            let totalHours = assignedClasses.reduce((sum, cls) => {
+                let lvl = cls.charAt(0);
+                return sum + hrs[lvl];
+            }, 0);
+
+            resultsTableBody.innerHTML += `
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/40 border-b dark:border-slate-700 transition">
+                    <td class="p-3 font-semibold text-slate-700 dark:text-white">${sub.name}</td>
+                    <td class="p-3 text-slate-500">منصب 0${p}</td>
+                    <td class="p-3 text-emerald-600 dark:text-emerald-400 font-medium text-xs leading-relaxed">
+                        ${assignedClasses.join('، ')}
+                    </td>
+                    <td class="p-3 text-center font-bold">${assignedClasses.length} أقسام</td>
+                    <td class="p-3 text-center font-bold text-blue-600">${totalHours.toFixed(1)} سا</td>
+                </tr>
+            `;
+        }
+    });
+
+    document.getElementById('resultsSection').classList.remove('hidden');
+    document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+};
+        
 
         document.getElementById('searchTableInput').addEventListener('keyup', function() {
             let filter = this.value.toUpperCase();
